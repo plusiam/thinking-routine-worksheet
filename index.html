@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사고가시화 웹학습지 - 보기·생각하기·궁금해하기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        
+        .thinking-step {
+            transition: all 0.3s ease;
+        }
+        
+        .thinking-step:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        
+        .step-see .step-icon { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .step-think .step-icon { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+        .step-wonder .step-icon { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+        
+        textarea:focus, input:focus {
+            outline: none;
+            ring: 2px;
+            ring-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+        
+        .save-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            transition: all 0.3s ease;
+        }
+        
+        .save-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        .reset-btn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            transition: all 0.3s ease;
+        }
+        
+        .reset-btn:hover {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+        
+        @media print {
+            .no-print { display: none !important; }
+        }
+        
+        .worksheet-content {
+            background: linear-gradient(135deg, #fefbff 0%, #f8fafc 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 헤더 -->
+    <header class="bg-white shadow-lg border-b-4 border-indigo-500 no-print">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">🎯 사고가시화 웹학습지</h1>
+                    <p class="text-gray-600 text-lg">보기 · 생각하기 · 궁금해하기</p>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button id="resetBtn" class="reset-btn text-white px-6 py-3 rounded-lg font-medium shadow-lg">
+                        🔄 새로 작성
+                    </button>
+                    <button id="saveBtn" class="save-btn text-white px-6 py-3 rounded-lg font-medium shadow-lg">
+                        💾 이미지로 저장
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="worksheet-content" id="worksheetContent">
+        <div class="container mx-auto px-4 py-8">
+            <!-- 학습지 제목 및 작성자 정보 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-200">
+                <!-- 학습지 제목 -->
+                <div class="mb-6">
+                    <label for="worksheetTitle" class="block text-lg font-semibold text-gray-800 mb-3">
+                        📝 학습지 제목
+                    </label>
+                    <input 
+                        type="text" 
+                        id="worksheetTitle" 
+                        placeholder="예: 『핑!』 표지 탐색하기, 『곰 사냥을 떠나자』 표지 분석 등"
+                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
+                    />
+                    <p class="text-sm text-gray-500 mt-2">💡 현재 탐색하고 있는 그림책이나 활동의 제목을 입력해주세요.</p>
+                </div>
+
+                <!-- 작성자 정보 -->
+                <div class="border-t pt-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">👤 작성자 정보</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="schoolName" class="block text-sm font-medium text-gray-700 mb-2">
+                                🏫 학교명
+                            </label>
+                            <input 
+                                type="text" 
+                                id="schoolName" 
+                                placeholder="○○초등학교"
+                                class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
+                            />
+                        </div>
+                        <div>
+                            <label for="classInfo" class="block text-sm font-medium text-gray-700 mb-2">
+                                📚 학년반
+                            </label>
+                            <input 
+                                type="text" 
+                                id="classInfo" 
+                                placeholder="3학년 2반"
+                                class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
+                            />
+                        </div>
+                        <div>
+                            <label for="studentName" class="block text-sm font-medium text-gray-700 mb-2">
+                                ✏️ 이름
+                            </label>
+                            <input 
+                                type="text" 
+                                id="studentName" 
+                                placeholder="홍길동"
+                                class="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 사고 루틴 3단계 -->
+            <div class="grid gap-8">
+                <!-- 1단계: 보기 -->
+                <div class="thinking-step step-see bg-white rounded-xl shadow-lg p-6 border border-blue-200">
+                    <div class="flex items-start gap-4">
+                        <div class="step-icon">🔍</div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-800 mb-3">1단계: 보기 (관찰하기)</h3>
+                            <label for="seeContent" class="block text-gray-700 font-medium mb-3">
+                                표지(그림)에서 무엇이 보이나요? 색깔, 인물, 배경, 표정, 사물 등을 자세히 관찰해보세요.
+                            </label>
+                            <textarea 
+                                id="seeContent"
+                                rows="6"
+                                placeholder="예시:
+• 주인공의 모습: 
+• 배경: 
+• 색깔: 
+• 표정이나 동작: 
+• 눈에 띄는 사물들: 
+• 글자의 모양이나 위치: "
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg resize-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-colors text-gray-800"
+                            ></textarea>
+                            <p class="text-sm text-blue-600 mt-2">💡 판단하지 말고 있는 그대로 관찰한 것만 적어보세요.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2단계: 생각하기 -->
+                <div class="thinking-step step-think bg-white rounded-xl shadow-lg p-6 border border-purple-200">
+                    <div class="flex items-start gap-4">
+                        <div class="step-icon">💭</div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-800 mb-3">2단계: 생각하기 (추론하기)</h3>
+                            <label for="thinkContent" class="block text-gray-700 font-medium mb-3">
+                                관찰한 것을 바탕으로 이 그림책에서는 어떤 이야기가 펼쳐질 것 같나요? 왜 그렇게 생각하나요?
+                            </label>
+                            <textarea 
+                                id="thinkContent"
+                                rows="6"
+                                placeholder="예시:
+• 어떤 이야기가 펼쳐질 것 같나요: 
+• 주인공에게 어떤 일이 일어날 것 같나요: 
+• 이야기의 분위기는 어떨 것 같나요: 
+• 그렇게 생각하는 이유는: 
+• 제목과 그림을 연결해서 생각해보면: "
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg resize-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors text-gray-800"
+                            ></textarea>
+                            <p class="text-sm text-purple-600 mt-2">💡 관찰한 내용을 근거로 들어 추론해보세요.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3단계: 궁금해하기 -->
+                <div class="thinking-step step-wonder bg-white rounded-xl shadow-lg p-6 border border-cyan-200">
+                    <div class="flex items-start gap-4">
+                        <div class="step-icon">❓</div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-800 mb-3">3단계: 궁금해하기 (질문하기)</h3>
+                            <label for="wonderContent" class="block text-gray-700 font-medium mb-3">
+                                이 그림책에 대해 궁금한 것은 무엇인가요? 더 알고 싶은 것이 있나요?
+                            </label>
+                            <textarea 
+                                id="wonderContent"
+                                rows="6"
+                                placeholder="예시:
+• 주인공은 누구일까요? 
+• 왜 이런 표정을 짓고 있을까요? 
+• 제목의 의미는 무엇일까요? 
+• 이야기는 어떻게 끝날까요? 
+• 작가는 왜 이런 색깔을 사용했을까요? 
+• 내가 주인공이라면 어떤 기분일까요? "
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg resize-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition-colors text-gray-800"
+                            ></textarea>
+                            <p class="text-sm text-cyan-600 mt-2">💡 호기심을 가지고 자유롭게 질문해보세요.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 하단 정보 -->
+            <div class="mt-8 text-center">
+                <div class="bg-white rounded-lg shadow-md p-4 inline-block">
+                    <p class="text-gray-600 text-sm">
+                        📚 <strong>사고가시화 웹학습지</strong> | 그림책을 통한 깊이 있는 사고 경험
+                    </p>
+                    <p class="text-gray-500 text-xs mt-1" id="currentDate"></p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 저장 완료 알림 모달 -->
+    <div id="saveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md mx-4">
+            <div class="text-center">
+                <div class="text-6xl mb-4">✅</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">저장 완료!</h3>
+                <p class="text-gray-600 mb-4">학습지가 이미지로 저장되었습니다.</p>
+                <button id="closeModal" class="bg-indigo-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-600 transition-colors">
+                    확인
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM 요소 선택
+        const saveBtn = document.getElementById('saveBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const worksheetContent = document.getElementById('worksheetContent');
+        const saveModal = document.getElementById('saveModal');
+        const closeModal = document.getElementById('closeModal');
+        const currentDate = document.getElementById('currentDate');
+        const worksheetTitle = document.getElementById('worksheetTitle');
+        const schoolName = document.getElementById('schoolName');
+        const classInfo = document.getElementById('classInfo');
+        const studentName = document.getElementById('studentName');
+        const seeContent = document.getElementById('seeContent');
+        const thinkContent = document.getElementById('thinkContent');
+        const wonderContent = document.getElementById('wonderContent');
+
+        // 현재 날짜 표시
+        currentDate.textContent = new Date().toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            weekday: 'long'
+        });
+
+        // 이미지 저장 기능
+        saveBtn.addEventListener('click', async () => {
+            try {
+                // 버튼 비활성화 및 로딩 표시
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '🔄 저장 중...';
+                
+                // html2canvas로 이미지 생성
+                const canvas = await html2canvas(worksheetContent, {
+                    backgroundColor: '#ffffff',
+                    scale: 2, // 고해상도
+                    useCORS: true,
+                    allowTaint: true,
+                    height: worksheetContent.scrollHeight,
+                    width: worksheetContent.scrollWidth
+                });
+
+                // 이미지 다운로드
+                const link = document.createElement('a');
+                const title = worksheetTitle.value || '사고가시화_학습지';
+                const name = studentName.value ? `_${studentName.value}` : '';
+                const fileName = `${title}${name}_${new Date().toISOString().split('T')[0]}.png`;
+                
+                link.download = fileName;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+
+                // 성공 모달 표시
+                saveModal.classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('저장 실패:', error);
+                alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+            } finally {
+                // 버튼 복원
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '💾 이미지로 저장';
+            }
+        });
+
+        // 초기화 기능
+        resetBtn.addEventListener('click', () => {
+            if (confirm('작성한 내용이 모두 삭제됩니다. 계속하시겠습니까?')) {
+                worksheetTitle.value = '';
+                schoolName.value = '';
+                classInfo.value = '';
+                studentName.value = '';
+                seeContent.value = '';
+                thinkContent.value = '';
+                wonderContent.value = '';
+                
+                // 첫 번째 입력 필드로 포커스 이동
+                worksheetTitle.focus();
+                
+                // 성공 알림
+                const resetAlert = document.createElement('div');
+                resetAlert.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                resetAlert.textContent = '✅ 초기화 완료';
+                document.body.appendChild(resetAlert);
+                
+                setTimeout(() => {
+                    resetAlert.remove();
+                }, 2000);
+            }
+        });
+
+        // 모달 닫기
+        closeModal.addEventListener('click', () => {
+            saveModal.classList.add('hidden');
+        });
+
+        // 모달 배경 클릭으로 닫기
+        saveModal.addEventListener('click', (e) => {
+            if (e.target === saveModal) {
+                saveModal.classList.add('hidden');
+            }
+        });
+
+        // 키보드 단축키
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+S: 저장
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveBtn.click();
+            }
+            
+            // Ctrl+R: 초기화 (기본 새로고침 방지)
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                resetBtn.click();
+            }
+            
+            // ESC: 모달 닫기
+            if (e.key === 'Escape') {
+                saveModal.classList.add('hidden');
+            }
+        });
+
+        // 자동 저장 (로컬 스토리지)
+        const autoSave = () => {
+            const data = {
+                title: worksheetTitle.value,
+                school: schoolName.value,
+                class: classInfo.value,
+                name: studentName.value,
+                see: seeContent.value,
+                think: thinkContent.value,
+                wonder: wonderContent.value,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('thinkingRoutineWorksheet', JSON.stringify(data));
+        };
+
+        // 자동 복원
+        const autoRestore = () => {
+            const saved = localStorage.getItem('thinkingRoutineWorksheet');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    // 24시간 내의 데이터만 복원
+                    if (Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+                        worksheetTitle.value = data.title || '';
+                        schoolName.value = data.school || '';
+                        classInfo.value = data.class || '';
+                        studentName.value = data.name || '';
+                        seeContent.value = data.see || '';
+                        thinkContent.value = data.think || '';
+                        wonderContent.value = data.wonder || '';
+                    }
+                } catch (e) {
+                    console.log('자동 복원 실패:', e);
+                }
+            }
+        };
+
+        // 입력 필드에 자동 저장 이벤트 리스너 추가
+        [worksheetTitle, schoolName, classInfo, studentName, seeContent, thinkContent, wonderContent].forEach(element => {
+            element.addEventListener('input', autoSave);
+        });
+
+        // 페이지 로드 시 자동 복원
+        autoRestore();
+
+        // 텍스트 영역 자동 높이 조절
+        const textareas = document.querySelectorAll('textarea');
+        textareas.forEach(textarea => {
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = this.scrollHeight + 'px';
+            });
+        });
+
+        // 접근성: Tab 키 네비게이션 개선
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                const focusableElements = document.querySelectorAll(
+                    'input, textarea, button, [tabindex]:not([tabindex="-1"])'
+                );
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+
+                if (e.shiftKey) {
+                    if (document.activeElement === firstElement) {
+                        e.preventDefault();
+                        lastElement.focus();
+                    }
+                } else {
+                    if (document.activeElement === lastElement) {
+                        e.preventDefault();
+                        firstElement.focus();
+                    }
+                }
+            }
+        });
+
+        console.log('🎯 사고가시화 웹학습지가 성공적으로 로드되었습니다!');
+        console.log('📚 GitHub Pages 배포 준비 완료');
+    </script>
+</body>
+</html>
